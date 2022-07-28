@@ -1,32 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Car } from './interfaces';
+import { v4 } from 'uuid';
 
-export interface Car {
-  id: number;
-  name: string;
-  year: string;
-  color: string;
-}
+import { CreateCarDto, UpdateCarDto } from './dtos';
 
 @Injectable()
 export class CarsService {
-  private readonly cars: Car[] = [
+  private cars: Car[] = [
     {
-      id: 1,
-      name: 'Ford',
-      year: '1954',
-      color: 'red',
+      id: v4(),
+      brand: 'Ford',
+      name: 'Fiesta',
     },
     {
-      id: 2,
-      name: 'Chevrolet',
-      year: '1955',
-      color: 'blue',
+      id: v4(),
+      brand: 'Chevrolet',
+      name: 'Malibu',
     },
     {
-      id: 3,
-      name: 'Toyota',
-      year: '1956',
-      color: 'green',
+      id: v4(),
+      brand: 'Toyota',
+      name: 'Corolla',
     },
   ];
 
@@ -34,11 +32,46 @@ export class CarsService {
     return this.cars;
   }
 
-  findOneById(id: number): Car {
+  findOneById(id: string): Car {
     const car = this.cars.find((car) => car.id === id);
 
     if (!car) throw new NotFoundException('Car not found');
 
     return car;
+  }
+
+  create(car: CreateCarDto): Car {
+    const newCar: Car = {
+      id: v4(),
+      ...car,
+    };
+
+    this.cars.push(newCar);
+
+    return newCar;
+  }
+
+  update(id: string, updateCarDto: UpdateCarDto) {
+    let carDB = this.findOneById(id);
+
+    if (updateCarDto.id && updateCarDto.id !== id)
+      throw new BadRequestException(`Car id is not valid inside body`);
+
+    this.cars = this.cars.map((car) => {
+      if (car.id === id) {
+        carDB = { ...carDB, ...updateCarDto, id };
+        return carDB;
+      }
+
+      return car;
+    });
+
+    return carDB;
+  }
+
+  delete(id: string) {
+    const car = this.findOneById(id);
+    if (!car) throw new NotFoundException('Car not found');
+    this.cars = this.cars.filter((car) => car.id !== id);
   }
 }
